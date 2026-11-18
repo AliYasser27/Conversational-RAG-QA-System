@@ -1,29 +1,39 @@
-# simple_faq.py - this is the old dumb bot from project 1
-# we keep it so we can swap between simple FAQ and RAG
+"""Small deterministic engine kept as a reference implementation.
 
-from typing import List, Tuple
-from .base import ChatEngine
+It satisfies the same :class:`~engines.base.ChatEngine` protocol as the RAG
+engine and is useful for demoing the Strategy pattern without an API key.
+"""
+
+from __future__ import annotations
+
+from collections import defaultdict
+from collections.abc import Mapping
+
+from .base import ChatEngine, Message
+
+UNKNOWN_ANSWER = "Sorry, I don't have an answer for that."
 
 
 class SimpleFAQEngine(ChatEngine):
-    def __init__(self, faq_map: dict):
-        # faq_map is just a dict like {"what is ai?": "AI is..."}
-        self.faq_map = faq_map
-        # store history per session
-        self.histories = {}
-    
+    """Lookup-based engine with per-session history."""
+
+    def __init__(self, faq_map: Mapping[str, str] | None = None) -> None:
+        self.faq_map = {
+            str(question).strip().lower(): str(answer)
+            for question, answer in (faq_map or {}).items()
+        }
+        self.histories: defaultdict[str, list[Message]] = defaultdict(list)
+
     def answer(self, session_id: str, question: str) -> str:
-        # look up answer, case insensitive
-        ans = self.faq_map.get(question.lower(), "Sorry, I don't know.")
-        
-        # save to history
-        if session_id not in self.histories:
-            self.histories[session_id] = []
-        
+        normalized = question.strip().lower()
+        answer = self.faq_map.get(normalized, UNKNOWN_ANSWER)
+
         self.histories[session_id].append(("user", question))
-        self.histories[session_id].append(("assistant", ans))
-        
-        return ans
-    
-    def get_history(self, session_id: str) -> List[Tuple[str, str]]:
-        return self.histories.get(session_id, [])
+        self.histories[session_id].append(("assistant", answer))
+        return answer
+
+    def get_history(self, session_id: str) -> list[Message]:
+        return list(self.histories.get(session_id, []))
+
+    def clear_history(self, session_id: str) -> None:
+        self.histories.pop(session_id, None)

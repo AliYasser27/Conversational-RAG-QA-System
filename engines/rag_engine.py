@@ -1,36 +1,70 @@
-# rag_engine.py - this is the smart RAG engine
-# it implements the ChatEngine interface so we can swap it in
+"""Adapter between the LangChain RAG chain and the UI-facing ChatEngine."""
 
-from typing import List, Tuple
-from .base import ChatEngine
+from __future__ import annotations
+
+from collections.abc import Mapping, MutableMapping
+from typing import Any
+
+from .base import ChatEngine, Message
+
+USER_ROLES = {"human", "user"}
+
+
+def _text_from(result: Any) -> str:
+    """Normalize common LangChain output shapes into a plain string."""
+    if isinstance(result, str):
+        return result.strip()
+
+    content = getattr(result, "content", result)
+    if isinstance(content, str):
+        return content.strip()
+    if isinstance(content, list):
+        parts = []
+        for block in content:
+            if isinstance(block, str):
+                parts.append(block)
+            elif isinstance(block, Mapping) and isinstance(block.get("text"), str):
+                parts.append(block["text"])
+        return "".join(parts).strip()
+    if isinstance(result, Mapping):
+        for key in ("answer", "output_text", "output"):
+            value = result.get(key)
+            if isinstance(value, str):
+                return value.strip()
+
+    raise TypeError(f"Unsupported chain output type: {type(result).__name__}.")
 
 
 class RagEngine(ChatEngine):
-    def __init__(self, rag_chain_with_history, history_store):
-        # rag_chain_with_history is the full chain from pipeline.py
-        # history_store maps session_id -> ChatMessageHistory
-        self.chain = rag_chain_with_history
+    """Executes a history-aware chain and exposes per-session transcripts."""
+
+    def __init__(self, chain: Any, history_store: MutableMapping[str, Any]) -> None:
+        self.chain = chain
         self.history_store = history_store
-    
+
     def answer(self, session_id: str, question: str) -> str:
-        # invoke the chain with session_id in config
-        # RunnableWithMessageHistory handles the history automatically
-        resp = self.chain.invoke(
+        question = question.strip()
+        if not question:
+            raise ValueError("Question must not be empty.")
+
+        result = self.chain.invoke(
             {"input": question},
             config={"configurable": {"session_id": session_id}},
         )
-        return resp
-    
-    def get_history(self, session_id: str) -> List[Tuple[str, str]]:
-        # convert ChatMessageHistory to list of (role, content) tuples
-        h = self.history_store.get(session_id)
-        if not h:
+        return _text_from(result)
+
+    def get_history(self, session_id: str) -> list[Message]:
+        history = self.history_store.get(session_id)
+        if history is None:
             return []
-        
-        # ChatMessageHistory stores messages as objects with .type and .content
-        # human = user, ai = assistant
-        result = []
-        for msg in h.messages:
-            role = "user" if msg.type == "human" else "assistant"
-            result.append((role, msg.content))
-        return result
+
+        messages: list[Message] = []
+        for message in history.messages:
+            role = "user" if getattr(message, "type", "") in USER_ROLES else "assistant"
+            messages.append((role, str(message.content)))
+        return messages
+
+    def clear_history(self, session_id: str) -> None:
+        history = self.history_store.get(session_id)
+        if history is not None:
+            history.clear()

@@ -1,3 +1,30 @@
-project_2_env/ 
-chroma_db/ 
-__pycache__/ 
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Environments and secrets
+.venv/
+venv/
+env/
+project_2_env/
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+
+# Generated data
+chroma_db/
+.chroma/
+
+# Tooling
+.pytest_cache/
+.ruff_cache/
+.coverage
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

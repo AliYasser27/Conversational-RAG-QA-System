@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "conversational-rag-qa-system"
+version = "1.0.0"
+description = "Conversational RAG over uploaded PDFs with per-session chat history"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "Ali Yasser" }]
+dependencies = [
+    "streamlit>=1.38,<2",
+    "langchain-core>=1.4,<2",
+    "langchain-community>=0.4,<1",
+    "langchain-text-splitters>=1.0,<2",
+    "langchain-groq>=1.0,<2",
+    "langchain-huggingface>=1.0,<2",
+    "langchain-chroma>=1.0,<2",
+    "chromadb>=1.0,<2",
+    "sentence-transformers>=3.0,<7",
+    "pypdf>=5,<8",
+    "PyYAML>=6,<7",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[tool.setuptools]
+py-modules = ["app", "settings"]
+packages = ["engines", "rag"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
