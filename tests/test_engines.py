@@ -4,7 +4,7 @@ import unittest
 from types import SimpleNamespace
 
 from engines.rag_engine import RagEngine, _text_from
-from engines.simple_faq import SimpleFAQEngine, UNKNOWN_ANSWER
+from engines.simple_faq import UNKNOWN_ANSWER, SimpleFAQEngine
 
 
 class FakeHistory:

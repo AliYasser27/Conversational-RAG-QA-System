@@ -113,7 +113,7 @@ class Settings:
     vector_store: VectorStoreConfig
 
     @classmethod
-    def from_yaml(cls, path: Path) -> "Settings":
+    def from_yaml(cls, path: Path) -> Settings:
         """Build settings from a YAML file, falling back to documented defaults."""
         try:
             raw = path.read_text(encoding="utf-8")

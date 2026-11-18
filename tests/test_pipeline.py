@@ -7,8 +7,8 @@ from types import SimpleNamespace
 from rag.pipeline import (
     ANSWER_SYSTEM_PROMPT,
     CONTEXTUALIZE_SYSTEM_PROMPT,
-    RerankingRetriever,
     RagPipeline,
+    RerankingRetriever,
     build_retriever,
 )
 from settings import ConfigError, load_settings
